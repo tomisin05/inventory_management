@@ -73,6 +73,7 @@ export default function Home() {
       }
       await updateInventory()
   }
+  }
 
   
 
@@ -81,7 +82,7 @@ export default function Home() {
     updateInventory()
   }, [])
 
-}
+
 
 const handleOpen = () => {
   setOpen(true)
