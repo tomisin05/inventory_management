@@ -105,6 +105,7 @@ export default function Home() {
       await updateInventory()
   }
   }
+  
 
   useEffect(() => {
     updateInventory()
