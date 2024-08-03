@@ -387,8 +387,8 @@ const handleClose = () => {
    
 <Stack direction="column" 
       spacing={2} 
-      width="500px"
-      height="30px"
+      width="800px"
+      height="800px"
       overflow="auto">
     <Box display="flex" gap={2} alignItems="center">
       <Camera
