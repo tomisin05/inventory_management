@@ -389,7 +389,6 @@ const handleClose = () => {
       spacing={2} 
       width="800px"
       height="800px"
-      overflow="auto">
     <Box display="flex" gap={2} alignItems="center">
       <Camera
   ref={cameraRef}
