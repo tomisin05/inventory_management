@@ -193,11 +193,7 @@ export default function Home() {
       }
       await updateInventory()
   }
-}
-
-
-
-
+  }
 
   
 
