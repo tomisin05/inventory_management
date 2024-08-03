@@ -1,6 +1,6 @@
 'use client'
 import Image from "next/image";
-import { useState, useEffect} from "react";
+import { useRef, useState, useEffect} from "react";
 import {firestore} from '@/firebase';
 import {Box,  Modal,  Stack,  TextField,  Typography, Button } from "@mui/material";
 import { collection, query } from "firebase/firestore";
@@ -9,19 +9,75 @@ import { doc } from 'firebase/firestore';
 import { deleteDoc } from 'firebase/firestore';
 import { setDoc, getDoc } from 'firebase/firestore';
 import useFilteredInventory from "./filter";
+import { Camera } from 'react-camera-pro';
+
+
 
 export default function Home() {
   const [inventory, setInventory] = useState([])
   const [open, setOpen] = useState(false)
   const [itemName, setItemName] = useState("")
   const [searchTerm, setSearchTerm] = useState("")
-  // const [category, setCategory] = useState('');
+  const [category, setCategory] = useState('');
   const [minQuantity, setMinQuantity] = useState(0);
   const [maxQuantity, setMaxQuantity] = useState(Infinity);
+  const [camera, setCamera] = useState(null);
+  const [capturedImage, setCapturedImage] = useState(null);
+  const cameraRef = useRef(null);
+
+  
+
 
   const filteredInventory = useFilteredInventory(inventory, searchTerm, minQuantity, maxQuantity);
 
   
+  const identifyItemsFromServer = async (imageBlob) => {
+    try {
+      const response = await fetch('/api/identify-items', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ imageBlob })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to identify items');
+      }
+
+      const items = await response.json();
+      console.log('Items identified:', items);
+      return items;
+    } catch (error) {
+      console.error('Error identifying items:', error);
+      return [];
+    }
+  };
+// const identifyItemsFromServer = async (imageBlob) => {
+//     try {
+//       const response = await fetch('/identify-items', {
+//         method: 'POST',
+//         headers: {
+//           'Content-Type': 'application/json'
+//         },
+//         body: JSON.stringify({ imageBlob })
+//       });
+  
+//       if (!response.ok) {
+//         throw new Error('Failed to identify items');
+//       }
+  
+//       const items = await response.json();
+//       console.log('Items identified:', items);
+//       return items;
+//     } catch (error) {
+//       console.error('Error identifying items:', error);
+//       return [];
+//     }
+//   };
+  
+
+
 
   const updateInventory = async () => {
     const snapshot = query(collection(firestore, 'inventory'))
@@ -38,23 +94,87 @@ export default function Home() {
     setInventory(inventoryList)
   }
   
-  const addItem = async (item) => {
-    const docRef = doc(firestore, 'inventory', item)
-    const docSnap = await getDoc(docRef)
+    // const addItem = async (item) => {
+    //     const docRef = doc(firestore, 'inventory', item);
+    //     const docSnap = await getDoc(docRef);
 
-    if (docSnap.exists()) {
-      const {quantity} = docSnap.data()
-      await setDoc(docRef, {
-          quantity: quantity + 1
-        })
-      }
-      else {
+    //     // When adding a new item
+    //     const imageFile = './path/to/image.jpg';
+    //     const items = await identifyItems(imageFile);
+
+    //     if (docSnap.exists()) {
+    //         const { quantity } = docSnap.data();
+    //         await setDoc(docRef, {
+    //         quantity: quantity + 1,
+    //         name: item,
+    //         category: items[0].category, // Assuming only one item per image
+    //         });
+    //     } else {
+    //         await setDoc(docRef, {
+    //         quantity: 1,
+    //         name: item,
+    //         category: items[0].category, // Assuming only one item per image
+    //         });
+    //     }
+
+    //     await updateInventory();
+    //     };
+
+
+    // const addItem = async (item) => {
+    //     const docRef = doc(firestore, 'inventory', item);
+    //     const docSnap = await getDoc(docRef);
+    
+    //     // When adding a new item
+    //     const imageFile = "C:\Users\tomis\OneDrive\Pictures\Screenshots\Screenshot 2023-09-29 152902.png"
+    //     const items = await identifyItems(imageFile);
+    
+    //     if (docSnap.exists()) {
+    //     const { quantity } = docSnap.data();
+    //     await setDoc(docRef, {
+    //         quantity: quantity + 1,
+    //         name: item,
+    //         category: items[0].category, // Assuming only one item per image
+    //     });
+    //     } else {
+    //     await setDoc(docRef, {
+    //         quantity: 1,
+    //         name: item,
+    //         category: items[0].category, // Assuming only one item per image
+    //     });
+    //     }
+    
+    //     await updateInventory();
+    // };
+
+    const addItem = async (item) => {
+      const docRef = doc(firestore, 'inventory', item);
+      const docSnap = await getDoc(docRef);
+    
+      // When adding a new item
+      const items = await identifyItemsFromServer(capturedImage);
+      console.log('Identified items:', items);
+    
+      if (docSnap.exists()) {
+        const { quantity } = docSnap.data();
         await setDoc(docRef, {
-          quantity: 1
-        })
+          quantity: quantity + 1,
+          name: item,
+          category: items[0].category, // Assuming only one item per image
+        });
+      } else {
+        await setDoc(docRef, {
+          quantity: 1,
+          name: item,
+          category: items[0].category, // Assuming only one item per image
+        });
       }
-      await updateInventory()
-  }
+    
+      await updateInventory();
+    };
+    
+    
+  
 
 
   const removeItem = async (item) => {
@@ -73,6 +193,11 @@ export default function Home() {
       }
       await updateInventory()
   }
+}
+
+
+
+
 
   
 
@@ -81,7 +206,11 @@ export default function Home() {
     updateInventory()
   }, [])
 
-}
+  useEffect(() => {
+    if (cameraRef.current) {
+      setCamera(cameraRef.current);
+    }
+  }, []);
 
 const handleOpen = () => {
   setOpen(true)
@@ -93,6 +222,7 @@ const handleClose = () => {
     
 
   return (
+    <div>
   <Box 
   width = "100vw" 
   height = "100vh"
@@ -156,11 +286,11 @@ const handleClose = () => {
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
         />
-        {/* <TextField
+        /* <TextField
           label="Category"
           value={category}
           onChange={(e) => setCategory(e.target.value)}
-        /> */}
+        /> 
         <TextField
           label="Min Quantity"
           type="number"
@@ -173,8 +303,8 @@ const handleClose = () => {
           value={maxQuantity}
           onChange={(e) => setMaxQuantity(e.target.value)}
         />
+        
       </Box>
-
  
     <Button
     variant="contained"
@@ -252,9 +382,48 @@ const handleClose = () => {
 
       
       ))}
+
+      
       </Stack>
     </Box>
+
+   
+<Stack direction="column" 
+      spacing={2} 
+      width="500px"
+      height="30px"
+      overflow="auto">
+    <Box display="flex" gap={2} alignItems="center">
+      <Camera
+  ref={cameraRef}
+  aspectRatio={1}
+  errorMessages={{
+    noCameraAccessible: 'No camera accessible. Please allow camera access.',
+    permissionDenied: 'Permission denied. Please allow camera access.',
+  }}
+/>
+<Button
+  variant="contained"
+  onClick={async () => {
+    if (camera) {
+      console.log('Camera instance:', camera);
+      const photo = await camera.capture();
+      setCapturedImage(photo.blob);
+    }
+  }}
+>
+  Capture Photo
+</Button>
+
+        </Box>
+
+      
+      </Stack> 
+    
   </Box> 
+  </div>
   )
 }
+
+
 
