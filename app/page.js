@@ -9,7 +9,7 @@ import { doc } from 'firebase/firestore';
 import { deleteDoc } from 'firebase/firestore';
 import { setDoc, getDoc } from 'firebase/firestore';
 import useFilteredInventory from "./filter";
-import { Camera } from 'react-camera-pro';
+import { Camera, CameraFacingMode } from 'react-camera-pro';
 
 export default function Home() {
   const [inventory, setInventory] = useState([])
@@ -22,6 +22,8 @@ export default function Home() {
   const [camera, setCamera] = useState(null);
   const [capturedImage, setCapturedImage] = useState(null);
   const cameraRef = useRef(null);
+  const [cameraFacingMode, setCameraFacingMode] = useState(CameraFacingMode.USER);
+
 
   const filteredInventory = useFilteredInventory(inventory, searchTerm, minQuantity, maxQuantity);
 
@@ -289,14 +291,35 @@ export default function Home() {
           overflow="auto"
         >
           <Box display="flex" gap={2} alignItems="center">
-            <Camera
-              ref={cameraRef}
-              aspectRatio={1}
-              errorMessages={{
-                noCameraAccessible: 'No camera accessible. Please allow camera access.',
-                permissionDenied: 'Permission denied. Please allow camera access.',
-              }}
+          <Camera
+            ref={cameraRef}
+            aspectRatio={1}
+            facingMode={cameraFacingMode}
+            errorMessages={{
+              noCameraAccessible: 'No camera accessible. Please allow camera access.',
+              permissionDenied: 'Permission denied. Please allow camera access.',
+            }}
             />
+
+            <Button
+              variant="contained"
+              onClick={() => {
+                setCameraFacingMode(
+                  cameraFacingMode === CameraFacingMode.USER
+                    ? CameraFacingMode.ENVIRONMENT
+                    : CameraFacingMode.USER
+                );
+              }}
+            >
+              Toggle Camera
+            </Button>
+
+            <Typography>
+            Current Camera: {cameraFacingMode === CameraFacingMode.USER ? 'Front' : 'Back'}
+            </Typography>
+
+
+
             <Button
               variant="contained"
               onClick={async () => {
@@ -309,6 +332,7 @@ export default function Home() {
             >
               Capture Photo
             </Button>
+
           </Box>
         </Stack>
       </Box>
