@@ -283,7 +283,7 @@ const handleClose = () => {
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
         />
-        /* <TextField
+        <TextField
           label="Category"
           value={category}
           onChange={(e) => setCategory(e.target.value)}
